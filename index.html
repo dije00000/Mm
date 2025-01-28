@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>me love a</title>
+    <style>
+        /* إعدادات الصفحة الرئيسية */
+        body {
+            font-family: "Cairo", sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to bottom, #1a1a2e, #16213e);
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* شريط العنوان */
+        header {
+            background: linear-gradient(90deg, #ff4b5c, #ff9a8b);
+            color: #fff;
+            text-align: center;
+            padding: 15px;
+            font-size: 30px;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            z-index: 2;
+        }
+
+        /* منطقة المحادثة */
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: rgba(255, 75, 92, 0.1);
+            border-top: 2px solid #ff4b5c;
+            z-index: 2;
+            position: relative;
+            backdrop-filter: blur(10px);
+        }
+        .chat-container .message {
+            margin: 10px 0;
+            padding: 12px 20px;
+            border-radius: 20px;
+            max-width: 70%;
+            font-size: 16px;
+        }
+        .chat-container .sent {
+            background: linear-gradient(90deg, #ff4b5c, #ff9a8b);
+            align-self: flex-end;
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(255, 75, 92, 0.5);
+        }
+        .chat-container .received {
+            background: rgba(30, 30, 30, 0.8);
+            align-self: flex-start;
+            color: #fff;
+            border: 1px solid #ff4b5c;
+        }
+
+        /* صندوق الإدخال */
+        .input-container {
+            display: flex;
+            padding: 10px;
+            background-color: #1a1a2e;
+            border-top: 2px solid #ff4b5c;
+        }
+        .input-container input {
+            flex: 1;
+            padding: 12px;
+            font-size: 16px;
+            border: 1px solid #333;
+            border-radius: 25px;
+            margin-right: 10px;
+            outline: none;
+            background-color: #16213e;
+            color: #fff;
+            transition: all 0.3s ease-in-out;
+        }
+        .input-container input:focus {
+            border-color: #ff4b5c;
+            box-shadow: 0 0 10px rgba(255, 75, 92, 0.5);
+        }
+        .input-container button {
+            padding: 12px 25px;
+            font-size: 16px;
+            color: #fff;
+            background: linear-gradient(90deg, #ff4b5c, #ff9a8b);
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(255, 75, 92, 0.5);
+            transition: all 0.3s ease-in-out;
+        }
+        .input-container button:hover {
+            background: linear-gradient(90deg, #ff9a8b, #ff4b5c);
+            box-shadow: 0 4px 15px rgba(255, 75, 92, 0.7);
+        }
+
+        /* تذييل الصفحة */
+        footer {
+            text-align: center;
+            padding: 10px;
+            background-color: #1a1a2e;
+            font-size: 14px;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+    <header>احبج اسوو💖✨</header>
+
+    <div class="chat-container" id="chatContainer">
+        <!-- الرسائل تظهر هنا -->
+    </div>
+
+    <div class="input-container">
+        <input type="text" id="messageInput" placeholder="اكتبي لي رسالة جميلة...">
+        <button onclick="sendMessage()">إرسال</button>
+    </div>
+
+    <footer>I love you </footer>
+
+    <script>
+        const botToken = "6391428563:AAGbO98-9ptsEFyzYDAf1T_Oa7xJVsb--D4";
+        const chatId = "6149773583"; // استبدل هذا بالـ chat_id الخاص بك
+        let lastUpdateId = 0; // تخزين آخر update_id تم معالجته
+
+        // إرسال الرسالة إلى بوت تليجرام
+        async function sendMessage() {
+            const chatContainer = document.getElementById("chatContainer");
+            const messageInput = document.getElementById("messageInput");
+
+            if (messageInput.value.trim() !== "") {
+                // إرسال الرسالة إلى تليجرام
+                await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        chat_id: chatId,
+                        text: messageInput.value
+                    })
+                });
+
+                // عرض الرسالة في واجهة المحادثة
+                const message = document.createElement("div");
+                message.className = "message sent";
+                message.textContent = messageInput.value;
+                chatContainer.appendChild(message);
+
+                // تنظيف حقل الإدخال
+                messageInput.value = "";
+
+                // التمرير إلى الأسفل تلقائيًا
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+        }
+
+        // جلب الرسائل من بوت تليجرام باستخدام Long Polling
+        async function getBotMessages() {
+            const response = await fetch(`https://api.telegram.org/bot${botToken}/getUpdates?offset=${lastUpdateId + 1}`);
+            const data = await response.json();
+            if (data.result && data.result.length > 0) {
+                data.result.forEach(update => {
+                    const message = update.message.text;
+                    lastUpdateId = update.update_id; // تحديث آخر update_id تم معالجته
+                    displayBotMessage(message);
+                });
+            }
+        }
+
+        // عرض رسالة البوت في واجهة المحادثة
+        function displayBotMessage(message) {
+            const chatContainer = document.getElementById("chatContainer");
+            const botMessage = document.createElement("div");
+            botMessage.className = "message received";
+            botMessage.textContent = message;
+            chatContainer.appendChild(botMessage);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // استدعاء الدالة بشكل دوري لجلب الردود من البوت
+        setInterval(getBotMessages, 3000); // يستدعي كل 3 ثواني
+    </script>
+</body>
+</html>
